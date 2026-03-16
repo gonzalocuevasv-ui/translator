@@ -6,12 +6,7 @@
 <title>RSAC Translator 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0a0c0f;--sur:#111418;--card:#181c22;--brd:#252b35;
-  --acc:#00d4aa;--blu:#0088ff;--orn:#ff6b35;
-  --txt:#e8ecf0;--mut:#6b7685;--red:#ff4444;
-  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
-}
+:root{--bg:#0a0c0f;--sur:#111418;--card:#181c22;--brd:#252b35;--acc:#00d4aa;--blu:#0088ff;--orn:#ff6b35;--txt:#e8ecf0;--mut:#6b7685;--red:#ff4444;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,170,.012) 3px,rgba(0,212,170,.012) 4px);pointer-events:none;z-index:9999}
@@ -25,7 +20,6 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .dot{width:6px;height:6px;border-radius:50%;background:var(--mut);transition:.3s}
 .dot.on{background:var(--acc);box-shadow:0 0 6px var(--acc);animation:bl 1.5s infinite}
 .dot.load{background:var(--blu);box-shadow:0 0 6px var(--blu);animation:bl .4s infinite}
-.dot.tts{background:var(--orn);box-shadow:0 0 6px var(--orn);animation:bl .6s infinite}
 @keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
 .alert{padding:9px 13px;border-radius:8px;font-size:12px;line-height:1.5;display:none}
 .alert.show{display:block}
@@ -47,7 +41,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 @keyframes rip{0%{box-shadow:0 0 0 0 rgba(0,212,170,.55)}70%{box-shadow:0 0 0 24px rgba(0,212,170,0)}100%{box-shadow:0 0 0 0 rgba(0,212,170,0)}}
 .mic-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);text-align:center}
 .mic-lbl.on{color:var(--acc)}
-.progress-ring{width:100%;display:flex;flex-direction:column;gap:4px}
+.prog-wrap{width:100%;display:flex;flex-direction:column;gap:4px}
 .prog-bar{width:100%;height:4px;background:var(--brd);border-radius:2px;overflow:hidden}
 .prog-fill{height:100%;background:var(--acc);border-radius:2px;width:0%;transition:width .1s linear}
 .prog-info{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--mut)}
@@ -102,7 +96,6 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 </head>
 <body>
 <div class="app">
-
   <div class="hdr">
     <div class="logo">
       <div class="logo-ico">🛡</div>
@@ -113,10 +106,8 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     </div>
     <div class="pill"><div class="dot" id="dot"></div><span id="stxt">Listo</span></div>
   </div>
-
   <div class="alert" id="alert"></div>
 
-  <!-- API KEY -->
   <div class="ctrl" id="keyPanel">
     <div class="c-lbl">Groq API Key</div>
     <div class="key-row">
@@ -134,12 +125,9 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <div class="mic-wrap">
     <button class="mic-btn" id="micBtn" onclick="toggleListen()">🎙</button>
     <div class="mic-lbl" id="micLbl">Toca para comenzar</div>
-    <div class="progress-ring">
+    <div class="prog-wrap">
       <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
-      <div class="prog-info">
-        <span id="progLbl">Grabando chunk cada 5s</span>
-        <span id="progSec"></span>
-      </div>
+      <div class="prog-info"><span id="progLbl">—</span><span id="progSec"></span></div>
     </div>
   </div>
 
@@ -165,323 +153,296 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
         <span>Audio 🔊</span>
         <label class="tog"><input type="checkbox" id="audOn"><div class="track"></div></label>
       </div>
-      <div class="trow">
-        <span>Overlap</span>
-        <label class="tog"><input type="checkbox" id="overlapOn" checked><div class="track"></div></label>
-      </div>
     </div>
     <div class="ctrl">
       <div class="c-lbl">Tamaño de chunk</div>
       <div class="rng">
-        <input type="range" min="3" max="10" value="5" id="chunkSlider"
+        <input type="range" min="4" max="12" value="6" id="chunkSlider"
           oninput="chunkSec=+this.value;document.getElementById('chunkV').textContent=this.value+'s'">
-        <div class="rng-row"><span class="rng-k">Duración:</span><span class="rng-v" id="chunkV">5s</span></div>
+        <div class="rng-row"><span class="rng-k">Duración:</span><span class="rng-v" id="chunkV">6s</span></div>
         <div class="rng-note">Audio enviado a Whisper cada N segundos.</div>
       </div>
     </div>
   </div>
-
 </div>
-<script>
-/* ════════════════════════════════════════
-   CONFIG
-════════════════════════════════════════ */
-let GROQ_KEY  = '';
-let mode      = 'en-es';
-let chunkSec  = 5;
-let listening = false;
 
-// MediaRecorder state
+<script>
+/* ═══════════════════════════════════
+   CONFIG
+═══════════════════════════════════ */
+let GROQ_KEY = '';
+let mode     = 'en-es';
+let chunkSec = 6;
+
+/* ═══════════════════════════════════
+   ESTADO
+═══════════════════════════════════ */
+let listening      = false;
+let isProcessing   = false;   // ← clave: bloquea nuevo chunk mientras procesa
 let mediaStream    = null;
 let mediaRecorder  = null;
 let chunkTimer     = null;
 let progTimer      = null;
-let progStart      = 0;
 let audioChunks    = [];
+let lastTranscript = '';      // deduplicación
+let contextBuf     = [];      // contexto para LLaMA
 
-// Contexto para traducción — últimas frases para dar contexto a LLaMA
-let contextBuffer  = [];
-const MAX_CONTEXT  = 4;
+const SYSTEM = `Eres un intérprete simultáneo profesional en ciberseguridad (RSAC 2026).
+Traduce ÚNICAMENTE el texto dado. Sin explicaciones. Sin comillas en la respuesta.
+Mantén en inglés: CVE, APT, zero-day, ransomware, phishing, exploit, payload, SIEM, EDR, XDR, SOC, TTPs, MITRE ATT&CK, threat actor, lateral movement, privilege escalation, incident response, threat hunting, red team, blue team, pentest, firewall, VPN, MFA, IAM.`;
 
-// Sistema de prompt para LLaMA con contexto RSAC
-const SYSTEM_PROMPT = `Eres un intérprete simultáneo profesional especializado en ciberseguridad.
-Tu única tarea es traducir el texto que recibes al idioma indicado.
-
-Reglas estrictas:
-- Responde SOLO con la traducción, sin explicaciones ni comentarios
-- Mantén términos técnicos en inglés cuando corresponda: CVE, APT, zero-day, ransomware, phishing, exploit, payload, SIEM, EDR, SOC, TTPs, MITRE ATT&CK, threat actor, lateral movement, etc.
-- Si el texto es muy corto o ininteligible, responde con una traducción aproximada
-- Preserva el tono y registro del orador
-- Contexto: conferencia RSAC 2026 San Francisco sobre ciberseguridad`;
-
-/* ════════════════════════════════════════
+/* ═══════════════════════════════════
    API KEY
-════════════════════════════════════════ */
+═══════════════════════════════════ */
 function saveKey() {
   const k = document.getElementById('keyInput').value.trim();
-  if (!k.startsWith('gsk_')) {
-    showAlert('La key debe empezar con gsk_', 'warn'); return;
-  }
+  if (!k.startsWith('gsk_')) { showAlert('La key debe empezar con gsk_','warn'); return; }
   GROQ_KEY = k;
+  sessionStorage.setItem('groq_key', k);
   document.getElementById('keyPanel').style.display = 'none';
-  showAlert('✓ API key guardada. Selecciona idioma y toca 🎙', 'info');
+  showAlert('✓ API key guardada. Toca 🎙 para comenzar','info');
 }
 
-// Pre-cargar key si está disponible
-window.addEventListener('load', () => {
-  const saved = sessionStorage.getItem('groq_key');
-  if (saved) {
-    GROQ_KEY = saved;
-    document.getElementById('keyInput').value = saved;
-    document.getElementById('keyPanel').style.display = 'none';
-    showAlert('Listo. Selecciona idioma y toca 🎙', 'info');
-  }
-  if (window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    window.speechSynthesis.getVoices();
-  }
-});
-
-/* ════════════════════════════════════════
-   GROQ — WHISPER (transcripción)
-════════════════════════════════════════ */
-async function transcribeAudio(blob) {
-  const srcLang = mode === 'en-es' ? 'en' : 'es';
-  const fd = new FormData();
+/* ═══════════════════════════════════
+   WHISPER — transcripción
+═══════════════════════════════════ */
+async function transcribe(blob) {
+  const lang = mode === 'en-es' ? 'en' : 'es';
+  const fd   = new FormData();
   fd.append('file', blob, 'audio.webm');
   fd.append('model', 'whisper-large-v3-turbo');
-  fd.append('language', srcLang);
+  fd.append('language', lang);
   fd.append('response_format', 'text');
-
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: fd
+  const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+GROQ_KEY},
+    body:fd
   });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('Whisper error: ' + res.status + ' ' + err.substring(0, 100));
-  }
-  return (await res.text()).trim();
+  if (!r.ok) throw new Error('Whisper '+r.status+': '+(await r.text()).substring(0,100));
+  return (await r.text()).trim();
 }
 
-/* ════════════════════════════════════════
-   GROQ — LLAMA 4 SCOUT (traducción)
-════════════════════════════════════════ */
-async function translateWithLlama(text) {
-  const tgtLang = mode === 'en-es' ? 'español' : 'English';
-  const ctx = contextBuffer.slice(-MAX_CONTEXT).join(' ');
-  const userMsg = ctx
-    ? `Contexto previo: "${ctx}"\n\nTraduce al ${tgtLang}: "${text}"`
-    : `Traduce al ${tgtLang}: "${text}"`;
+/* ═══════════════════════════════════
+   LLAMA — traducción con contexto
+═══════════════════════════════════ */
+async function translate(text) {
+  const tgtLang = mode === 'en-es' ? 'español latinoamericano' : 'English';
+  const ctx     = contextBuf.slice(-3).join(' ');
+  const msg     = ctx
+    ? `Contexto previo: "${ctx}"\nTraduce al ${tgtLang}: ${text}`
+    : `Traduce al ${tgtLang}: ${text}`;
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + GROQ_KEY,
-      'Content-Type': 'application/json'
-    },
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+GROQ_KEY,'Content-Type':'application/json'},
     body: JSON.stringify({
       model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: userMsg }
-      ],
-      max_tokens: 512,
-      temperature: 0.1  // baja temperatura para traducciones consistentes
+      messages:[{role:'system',content:SYSTEM},{role:'user',content:msg}],
+      max_tokens: 300,
+      temperature: 0.1
     })
   });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('LLaMA error: ' + res.status + ' ' + err.substring(0, 100));
-  }
-
-  const data = await res.json();
-  return data.choices[0].message.content.trim()
-    .replace(/^["']|["']$/g, '')   // quitar comillas si el modelo las pone
-    .trim();
+  if (!r.ok) throw new Error('LLaMA '+r.status+': '+(await r.text()).substring(0,100));
+  const d = await r.json();
+  return d.choices[0].message.content.trim().replace(/^["']|["']$/g,'').trim();
 }
 
-/* ════════════════════════════════════════
-   MEDIARECORDER — grabación en chunks
-════════════════════════════════════════ */
+/* ═══════════════════════════════════
+   GRABACIÓN — sin overlap
+   FIX CLAVE: isProcessing bloquea
+   el siguiente chunk hasta que
+   Whisper + LLaMA terminen.
+═══════════════════════════════════ */
 async function startRecording() {
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        sampleRate: 16000
-      }
+      audio:{echoCancellation:true,noiseSuppression:true,sampleRate:16000}
     });
   } catch(e) {
-    showAlert('No se pudo acceder al micrófono: ' + e.message, 'err');
-    listening = false; setMic('off'); setLbl('Sin permiso', false);
-    return;
+    showAlert('Micrófono no disponible: '+e.message,'err');
+    listening=false; setMic('off'); setLbl('Sin permiso',false); return;
   }
-
-  recordChunk();
+  recordNextChunk();
 }
 
-function recordChunk() {
+function recordNextChunk() {
   if (!listening) return;
 
   audioChunks = [];
-
-  // Elegir formato soportado
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+  const mime  = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
     ? 'audio/webm;codecs=opus'
-    : MediaRecorder.isTypeSupported('audio/webm')
-    ? 'audio/webm'
-    : 'audio/ogg;codecs=opus';
+    : 'audio/webm';
 
-  mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
-
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size > 0) audioChunks.push(e.data);
-  };
+  mediaRecorder = new MediaRecorder(mediaStream, {mimeType:mime});
+  mediaRecorder.ondataavailable = e => { if(e.data?.size>0) audioChunks.push(e.data); };
 
   mediaRecorder.onstop = async () => {
     if (!listening) return;
-    const blob = new Blob(audioChunks, { type: mimeType });
-    if (blob.size < 1000) {
-      // Chunk demasiado pequeño — silencio, saltar
-      if (listening) recordChunk();
+    const blob = new Blob(audioChunks, {type:mime});
+
+    // Ignorar chunks muy pequeños (silencio)
+    if (blob.size < 2000) {
+      setProgLabel('Silencio detectado, esperando…');
+      setTimeout(recordNextChunk, 200);
       return;
     }
+
+    // Procesar y ESPERAR antes de grabar el siguiente
+    isProcessing = true;
     await processChunk(blob);
-    // Si overlap activo, iniciar siguiente chunk inmediatamente
-    if (listening) recordChunk();
+    isProcessing = false;
+
+    // Solo grabar siguiente si seguimos escuchando
+    if (listening) recordNextChunk();
   };
 
   mediaRecorder.start();
-  setDot('on'); setSt('Grabando'); setMic('on'); setLbl('Grabando…', true);
+  setDot('on'); setSt('Grabando'); setMic('on'); setLbl('Grabando…',true);
+  setProgLabel('Grabando chunk '+chunkSec+'s…');
 
   // Barra de progreso
-  progStart = Date.now();
+  const t0 = Date.now();
   clearInterval(progTimer);
   progTimer = setInterval(() => {
-    const elapsed = (Date.now() - progStart) / 1000;
-    const pct = Math.min((elapsed / chunkSec) * 100, 100);
-    document.getElementById('progFill').style.width = pct + '%';
-    document.getElementById('progSec').textContent = elapsed.toFixed(1) + 's / ' + chunkSec + 's';
+    const pct = Math.min(((Date.now()-t0)/1000/chunkSec)*100,100);
+    document.getElementById('progFill').style.width = pct+'%';
+    document.getElementById('progSec').textContent  = ((Date.now()-t0)/1000).toFixed(1)+'s';
   }, 100);
 
-  // Detener chunk después de chunkSec
   chunkTimer = setTimeout(() => {
     clearInterval(progTimer);
     document.getElementById('progFill').style.width = '100%';
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-    }
-  }, chunkSec * 1000);
+    if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+  }, chunkSec*1000);
 }
 
 async function processChunk(blob) {
+  clearInterval(progTimer);
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progSec').textContent  = '';
+
   setDot('load'); setSt('Transcribiendo…'); setMic('load');
+  setProgLabel('Enviando a Whisper…');
 
+  let transcript = '';
   try {
-    // 1. Transcribir con Whisper
-    const transcript = await transcribeAudio(blob);
-
-    if (!transcript || transcript.length < 3) {
-      if (listening) { setDot('on'); setSt('Grabando'); setMic('on'); }
-      return;
-    }
-
-    // Mostrar transcripción en vivo
-    document.getElementById('liveTxt').textContent = transcript;
-
-    // 2. Traducir con LLaMA
-    setSt('Traduciendo…');
-    const translation = await translateWithLlama(transcript);
-
-    // Actualizar contexto
-    contextBuffer.push(transcript);
-    if (contextBuffer.length > MAX_CONTEXT) contextBuffer.shift();
-
-    // 3. Mostrar resultado
-    addEntry(transcript, translation);
-
-    // 4. TTS si está activo
-    if (document.getElementById('audOn').checked) tts(translation);
-
+    transcript = await transcribe(blob);
   } catch(e) {
-    console.error('processChunk error:', e);
-    showAlert('Error: ' + e.message.substring(0, 80), 'warn');
+    showAlert('Whisper error: '+e.message.substring(0,60),'warn');
+    setProgLabel('Error — reintentando');
+    return;
   }
 
-  if (listening) { setDot('on'); setSt('Grabando'); setMic('on'); }
+  if (!transcript || transcript.length < 2) {
+    setProgLabel('Sin voz detectada');
+    return;
+  }
+
+  // DEDUPLICACIÓN: ignorar si es muy similar al anterior
+  const sim = similarity(transcript.toLowerCase(), lastTranscript.toLowerCase());
+  if (sim > 0.80) {
+    setProgLabel('Texto repetido ignorado');
+    document.getElementById('liveTxt').textContent = '(repetido: '+transcript+')';
+    return;
+  }
+  lastTranscript = transcript;
+
+  document.getElementById('liveTxt').textContent = transcript;
+  setProgLabel('Traduciendo con LLaMA…');
+  setSt('Traduciendo…');
+
+  let translation = '';
+  try {
+    translation = await translate(transcript);
+  } catch(e) {
+    showAlert('LLaMA error: '+e.message.substring(0,60),'warn');
+    return;
+  }
+
+  // Actualizar contexto
+  contextBuf.push(transcript);
+  if (contextBuf.length > 4) contextBuf.shift();
+
+  addEntry(transcript, translation);
+  setProgLabel('✓ Listo');
+
+  if (document.getElementById('audOn').checked) tts(translation);
 }
+
+// Similitud simple por palabras compartidas
+function similarity(a, b) {
+  if (!a || !b) return 0;
+  const wa = new Set(a.split(/\s+/));
+  const wb = new Set(b.split(/\s+/));
+  let common = 0;
+  wa.forEach(w => { if(wb.has(w)) common++; });
+  return common / Math.max(wa.size, wb.size);
+}
+
+function setProgLabel(t) { document.getElementById('progLbl').textContent = t; }
 
 function stopRecording() {
-  clearTimeout(chunkTimer);
-  clearInterval(progTimer);
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    try { mediaRecorder.stop(); } catch(e){}
-  }
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
+  clearTimeout(chunkTimer); clearInterval(progTimer);
+  try { mediaRecorder?.state!=='inactive' && mediaRecorder.stop(); } catch(e){}
+  mediaStream?.getTracks().forEach(t=>t.stop());
+  mediaStream = null;
   document.getElementById('progFill').style.width = '0%';
-  document.getElementById('progSec').textContent = '';
+  document.getElementById('progSec').textContent  = '';
+  setProgLabel('—');
 }
 
-/* ════════════════════════════════════════
-   CONTROL PRINCIPAL
-════════════════════════════════════════ */
+/* ═══════════════════════════════════
+   TOGGLE
+═══════════════════════════════════ */
 function toggleListen() {
   if (listening) {
     listening = false;
     stopRecording();
-    setDot(''); setSt('Listo'); setMic('off'); setLbl('Toca para comenzar', false);
+    setDot(''); setSt('Listo'); setMic('off'); setLbl('Toca para comenzar',false);
     document.getElementById('liveTxt').textContent = 'Esperando audio…';
   } else {
     if (!GROQ_KEY) {
-      showAlert('Primero ingresa tu Groq API key', 'warn');
-      document.getElementById('keyPanel').style.display = 'block';
-      return;
+      showAlert('Primero ingresa tu Groq API key','warn');
+      document.getElementById('keyPanel').style.display='block'; return;
     }
     listening = true;
+    lastTranscript = '';
+    contextBuf = [];
     startRecording();
   }
 }
 
-/* ════════════════════════════════════════
+/* ═══════════════════════════════════
    TTS
-════════════════════════════════════════ */
+═══════════════════════════════════ */
 function tts(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u   = new SpeechSynthesisUtterance(text);
-  const vcs = window.speechSynthesis.getVoices();
-  if (mode === 'en-es') {
-    u.voice = vcs.find(v=>v.lang==='es-MX')||vcs.find(v=>v.lang==='es-CL')||vcs.find(v=>v.lang==='es-AR')||vcs.find(v=>v.lang==='es-ES')||vcs.find(v=>v.lang.startsWith('es'))||null;
-    u.lang  = u.voice ? u.voice.lang : 'es-MX';
-    u.rate  = 1.05;
+  const u=new SpeechSynthesisUtterance(text);
+  const vcs=window.speechSynthesis.getVoices();
+  if (mode==='en-es') {
+    u.voice=vcs.find(v=>v.lang==='es-MX')||vcs.find(v=>v.lang==='es-CL')||vcs.find(v=>v.lang==='es-AR')||vcs.find(v=>v.lang==='es-ES')||vcs.find(v=>v.lang.startsWith('es'))||null;
+    u.lang=u.voice?u.voice.lang:'es-MX'; u.rate=1.0;
   } else {
-    u.voice = vcs.find(v=>v.lang==='en-US')||vcs.find(v=>v.lang.startsWith('en'))||null;
-    u.lang  = 'en-US'; u.rate = 1.05;
+    u.voice=vcs.find(v=>v.lang==='en-US')||vcs.find(v=>v.lang.startsWith('en'))||null;
+    u.lang='en-US'; u.rate=1.05;
   }
   window.speechSynthesis.speak(u);
 }
 
-/* ════════════════════════════════════════
+/* ═══════════════════════════════════
    UI
-════════════════════════════════════════ */
-function addEntry(src, tgt) {
-  const el = document.getElementById('empty'); if(el) el.remove();
-  const sc = document.getElementById('scroll');
+═══════════════════════════════════ */
+function addEntry(src,tgt) {
+  const el=document.getElementById('empty'); if(el) el.remove();
+  const sc=document.getElementById('scroll');
   sc.querySelectorAll('.new-en,.new-es').forEach(e=>e.classList.remove('new-en','new-es'));
-  const isEN = mode === 'en-es';
-  const div  = document.createElement('div');
-  div.className = 'entry '+(isEN?'new-en':'new-es');
-  const ts  = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const tQ  = tgt.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  div.innerHTML =
+  const isEN=mode==='en-es';
+  const div=document.createElement('div');
+  div.className='entry '+(isEN?'new-en':'new-es');
+  const ts=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const tQ=tgt.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  div.innerHTML=
     '<div class="e-src">'+esc(src)+'</div>'+
     '<div class="e-tgt">'+esc(tgt)+'</div>'+
     '<div class="e-meta">'+
@@ -492,33 +453,21 @@ function addEntry(src, tgt) {
     '</div>';
   sc.appendChild(div); sc.scrollTop=sc.scrollHeight;
 }
-
-function clearAll() {
-  document.getElementById('scroll').innerHTML='<div class="empty" id="empty">Las traducciones aparecerán aquí</div>';
-  contextBuffer = [];
-}
+function clearAll(){document.getElementById('scroll').innerHTML='<div class="empty" id="empty">Las traducciones aparecerán aquí</div>';contextBuf=[];lastTranscript='';}
 function setDot(c){document.getElementById('dot').className='dot'+(c?' '+c:'');}
 function setSt(t){document.getElementById('stxt').textContent=t;}
-function setMic(s){
-  const b=document.getElementById('micBtn');
-  b.className='mic-btn'+(s==='on'?' on':s==='load'?' load':'');
-  b.textContent=s==='load'?'⏳':'🎙';
-}
+function setMic(s){const b=document.getElementById('micBtn');b.className='mic-btn'+(s==='on'?' on':s==='load'?' load':'');b.textContent=s==='load'?'⏳':'🎙';}
 function setLbl(t,on){const l=document.getElementById('micLbl');l.textContent=t;l.className='mic-lbl'+(on?' on':'');}
-function showAlert(msg,type='info'){
-  const b=document.getElementById('alert');
-  b.className='alert show '+type; b.textContent=msg;
-  if(type==='info') setTimeout(()=>b.classList.remove('show'),5000);
-}
+function showAlert(msg,type='info'){const b=document.getElementById('alert');b.className='alert show '+type;b.textContent=msg;if(type==='info')setTimeout(()=>b.classList.remove('show'),5000);}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function setMode(m){
-  mode=m;
-  document.getElementById('btnEN').className='lb'+(m==='en-es'?' a-en':'');
-  document.getElementById('btnES').className='lb'+(m==='es-en'?' a-es':'');
-  contextBuffer=[];
-  if(listening){listening=false;stopRecording();setTimeout(()=>{listening=true;startRecording();},300);}
-}
+function setMode(m){mode=m;document.getElementById('btnEN').className='lb'+(m==='en-es'?' a-en':'');document.getElementById('btnES').className='lb'+(m==='es-en'?' a-es':'');contextBuf=[];lastTranscript='';if(listening){listening=false;stopRecording();setTimeout(()=>{listening=true;startRecording();},300);}}
 function swapMode(){setMode(mode==='en-es'?'es-en':'en-es');}
+
+window.addEventListener('load',()=>{
+  const saved=sessionStorage.getItem('groq_key');
+  if(saved){GROQ_KEY=saved;document.getElementById('keyInput').value=saved;document.getElementById('keyPanel').style.display='none';showAlert('Listo. Toca 🎙 para comenzar','info');}
+  if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();window.speechSynthesis.getVoices();}
+});
 </script>
 </body>
 </html>
