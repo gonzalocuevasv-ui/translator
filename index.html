@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>RSAC Translator 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c0f;--sur:#111418;--card:#181c22;--brd:#252b35;
+  --acc:#00d4aa;--blu:#0088ff;--orn:#ff6b35;
+  --txt:#e8ecf0;--mut:#6b7685;--red:#ff4444;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,170,.012) 3px,rgba(0,212,170,.012) 4px);
+  pointer-events:none;z-index:9999}
+.app{max-width:440px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:100vh}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  background:var(--card);border:1px solid var(--brd);border-top:2px solid var(--acc);border-radius:12px}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-ico{width:32px;height:32px;background:var(--acc);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-name{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--acc);letter-spacing:.05em}
+.logo-sub{font-size:9px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase}
+.pill{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--mut);
+  padding:4px 11px;background:var(--sur);border:1px solid var(--brd);border-radius:20px;
+  text-transform:uppercase;letter-spacing:.06em}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--mut);transition:.3s}
+.dot.on  {background:var(--acc);box-shadow:0 0 6px var(--acc);animation:bl 1.5s infinite}
+.dot.load{background:var(--blu);box-shadow:0 0 6px var(--blu);animation:bl .4s infinite}
+.dot.tts {background:var(--orn);box-shadow:0 0 6px var(--orn);animation:bl .6s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ALERT */
+.alert{padding:9px 13px;border-radius:8px;font-size:12px;line-height:1.5;display:none}
+.alert.show{display:block}
+.alert.info{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);color:var(--acc)}
+.alert.warn{background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.3);color:var(--orn)}
+.alert.err {background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3); color:var(--red)}
+
+/* LANG */
+.lang-row{display:flex;height:50px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden}
+.lb{flex:1;border:none;background:none;cursor:pointer;font-family:var(--mono);font-size:12px;
+  font-weight:600;letter-spacing:.06em;color:var(--mut);transition:.2s;
+  display:flex;align-items:center;justify-content:center;gap:6px}
+.lb.a-en{color:var(--blu);background:rgba(0,136,255,.1)}
+.lb.a-es{color:var(--orn);background:rgba(255,107,53,.1)}
+.swap{border:none;background:none;cursor:pointer;color:var(--mut);font-size:22px;padding:0 16px;
+  border-left:1px solid var(--brd);border-right:1px solid var(--brd);transition:.2s;
+  display:flex;align-items:center}
+.swap:hover{color:var(--acc)}
+
+/* MIC */
+.mic-wrap{display:flex;flex-direction:column;align-items:center;padding:24px 16px 18px;
+  background:var(--card);border:1px solid var(--brd);border-radius:16px;
+  gap:12px;position:relative;overflow:hidden}
+.mic-wrap::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,212,170,.07) 0%,transparent 70%);
+  pointer-events:none}
+.mic-btn{width:90px;height:90px;border-radius:50%;border:2px solid var(--brd);cursor:pointer;
+  background:var(--sur);color:var(--mut);font-size:32px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;outline:none;user-select:none;position:relative;z-index:1}
+.mic-btn:active{transform:scale(.91)}
+.mic-btn.on  {background:rgba(0,212,170,.12);border-color:var(--acc);color:var(--acc);animation:rip 1.5s infinite}
+.mic-btn.load{background:rgba(0,136,255,.10);border-color:var(--blu);color:var(--blu)}
+.mic-btn.tts {background:rgba(255,107,53,.10);border-color:var(--orn);color:var(--orn)}
+@keyframes rip{
+  0%  {box-shadow:0 0 0 0   rgba(0,212,170,.55)}
+  70% {box-shadow:0 0 0 24px rgba(0,212,170,0)}
+  100%{box-shadow:0 0 0 0   rgba(0,212,170,0)}}
+.mic-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.mic-lbl.on {color:var(--acc)}
+.mic-lbl.tts{color:var(--orn)}
+
+/* BAR */
+.bar-wrap{width:100%;display:flex;flex-direction:column;gap:3px}
+.bar{width:100%;height:3px;background:var(--brd);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:var(--acc);border-radius:2px;width:0%;transition:width .12s}
+.bar-fill.hot{background:var(--orn)}
+.bar-info{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--mut)}
+
+/* LIVE */
+.live{background:var(--card);border:1px solid var(--brd);border-radius:10px;overflow:hidden}
+.live-hdr{padding:5px 12px;background:var(--sur);border-bottom:1px solid var(--brd);
+  font-family:var(--mono);font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;
+  display:flex;align-items:center;gap:6px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:bl .9s infinite}
+.live-txt{padding:10px 12px;font-size:13px;color:rgba(232,236,240,.55);
+  font-style:italic;line-height:1.5;min-height:42px}
+
+/* RESULTS */
+.results{background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden}
+.res-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 13px;background:var(--sur);border-bottom:1px solid var(--brd)}
+.res-title{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut)}
+.clr{background:none;border:1px solid var(--brd);border-radius:5px;padding:3px 9px;
+  color:var(--mut);font-family:var(--mono);font-size:9px;cursor:pointer;text-transform:uppercase;transition:.2s}
+.clr:hover{border-color:var(--red);color:var(--red)}
+.res-scroll{max-height:310px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.res-scroll::-webkit-scrollbar{width:3px}
+.res-scroll::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.entry{padding:10px 12px;border-radius:8px;border:1px solid var(--brd);
+  display:flex;flex-direction:column;gap:5px;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.entry.new-en{border-color:rgba(0,136,255,.4);background:rgba(0,136,255,.04)}
+.entry.new-es{border-color:rgba(255,107,53,.4);background:rgba(255,107,53,.04)}
+.e-src{font-size:11px;color:var(--mut);font-style:italic;line-height:1.4}
+.e-tgt{font-size:16px;color:var(--txt);font-weight:500;line-height:1.45}
+.e-meta{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--mut)}
+.badge{padding:1px 6px;border-radius:3px;font-size:8px;font-family:var(--mono);text-transform:uppercase}
+.b-en {background:rgba(0,136,255,.12);color:var(--blu)}
+.b-es {background:rgba(255,107,53,.12);color:var(--orn)}
+.b-seg{background:rgba(0,212,170,.10);color:var(--acc)}
+.spk{background:none;border:none;cursor:pointer;color:var(--mut);font-size:14px;
+  padding:1px 4px;margin-left:auto;transition:.15s}
+.spk:hover{color:var(--acc)}
+.empty{text-align:center;padding:26px;font-size:12px;color:var(--mut);font-style:italic}
+
+/* CONTROLS */
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ctrl{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:12px}
+.c-lbl{font-family:var(--mono);font-size:9px;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+.trow{display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--txt);margin-bottom:8px}
+.trow:last-child{margin-bottom:0}
+.tog{position:relative;width:34px;height:18px}
+.tog input{opacity:0;width:0;height:0}
+.track{position:absolute;inset:0;background:var(--brd);border-radius:9px;cursor:pointer;transition:.25s}
+.track::before{content:'';position:absolute;width:12px;height:12px;left:3px;bottom:3px;
+  background:var(--mut);border-radius:50%;transition:.25s}
+.tog input:checked~.track{background:rgba(0,212,170,.4)}
+.tog input:checked~.track::before{transform:translateX(16px);background:var(--acc)}
+.rng{display:flex;flex-direction:column;gap:5px}
+.rng input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
+.rng-row{display:flex;justify-content:space-between}
+.rng-v{font-family:var(--mono);font-size:10px;color:var(--acc)}
+.rng-k{font-size:10px;color:var(--mut)}
+.rng-note{font-size:9px;color:var(--mut);line-height:1.4;margin-top:1px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-ico">🛡</div>
+      <div>
+        <div class="logo-name">RSAC//TRANSLATE</div>
+        <div class="logo-sub">2026 · San Francisco</div>
+      </div>
+    </div>
+    <div class="pill"><div class="dot" id="dot"></div><span id="stxt">Listo</span></div>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="lang-row">
+    <button class="lb a-en" id="btnEN" onclick="setMode('en-es')">🇺🇸 EN → ES</button>
+    <button class="swap" onclick="swapMode()">⇄</button>
+    <button class="lb" id="btnES" onclick="setMode('es-en')">🇨🇱 ES → EN</button>
+  </div>
+
+  <div class="mic-wrap">
+    <button class="mic-btn" id="micBtn" onclick="toggleListen()">🎙</button>
+    <div class="mic-lbl" id="micLbl">Toca para comenzar</div>
+    <div class="bar-wrap">
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      <div class="bar-info">
+        <span id="barW">0 palabras</span>
+        <span id="barS"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="live">
+    <div class="live-hdr"><div class="live-dot"></div>En vivo</div>
+    <div class="live-txt" id="liveTxt">Esperando audio…</div>
+  </div>
+
+  <div class="results">
+    <div class="res-hdr">
+      <span class="res-title">Traducciones</span>
+      <button class="clr" onclick="clearAll()">Limpiar</button>
+    </div>
+    <div class="res-scroll" id="scroll">
+      <div class="empty" id="empty">Las traducciones aparecerán aquí</div>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <div class="ctrl">
+      <div class="c-lbl">Opciones</div>
+      <div class="trow">
+        <span>Audio 🔊</span>
+        <label class="tog"><input type="checkbox" id="audOn"><div class="track"></div></label>
+      </div>
+      <div class="trow">
+        <span>Corte auto</span>
+        <label class="tog"><input type="checkbox" id="segOn" checked><div class="track"></div></label>
+      </div>
+    </div>
+    <div class="ctrl">
+      <div class="c-lbl">Límite de frase</div>
+      <div class="rng">
+        <input type="range" min="6" max="25" value="14" id="segSlider"
+          oninput="segLimit=+this.value;document.getElementById('segV').textContent=this.value">
+        <div class="rng-row">
+          <span class="rng-k">Palabras:</span>
+          <span class="rng-v" id="segV">14</span>
+        </div>
+        <div class="rng-note">Traduce antes de terminar si supera este límite.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ═══════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════ */
+let mode       = 'en-es';
+let rec        = null;
+let listening  = false;
+let isSpeaking = false;
+let segLimit   = 14;
+let txQueue    = Promise.resolve();
+let cbIdx      = 0;
+
+/* ═══════════════════════════════════════
+   DETECCIÓN DE AURICULARES
+   Audio activado automáticamente si hay
+   auriculares — desactivado en PC solo.
+═══════════════════════════════════════ */
+async function detectHeadphones() {
+  try {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const outs = devs.filter(d => d.kind === 'audiooutput');
+    if (outs.length > 1) {
+      document.getElementById('audOn').checked = true;
+    }
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════
+   TRADUCCIÓN
+   Método 1: JSONP — sin fetch, sin CORS,
+   funciona en GitHub Pages y cualquier HTTPS.
+   Método 2: Google gtx — fallback.
+═══════════════════════════════════════ */
+function translateJSONP(text) {
+  return new Promise((resolve, reject) => {
+    const cb  = '__cb' + (cbIdx++);
+    const lp  = mode === 'en-es' ? 'en|es' : 'es|en';
+    const url = 'https://api.mymemory.translated.net/get'
+              + '?q='        + encodeURIComponent(text)
+              + '&langpair=' + lp
+              + '&callback=' + cb;
+
+    const tid = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 7000);
+
+    window[cb] = (data) => {
+      clearTimeout(tid); cleanup();
+      if (data && data.responseStatus === 200) {
+        const t = (data.responseData.translatedText || '').trim();
+        if (t && t.toLowerCase() !== text.trim().toLowerCase()) resolve(t);
+        else reject(new Error('igual'));
+      } else reject(new Error('status ' + (data && data.responseStatus)));
+    };
+
+    function cleanup() {
+      delete window[cb];
+      const s = document.getElementById(cb);
+      if (s) s.remove();
+    }
+
+    const s    = document.createElement('script');
+    s.id       = cb;
+    s.src      = url;
+    s.onerror  = () => { clearTimeout(tid); cleanup(); reject(new Error('load')); };
+    document.head.appendChild(s);
+  });
+}
+
+async function translateGTX(text) {
+  const sl  = mode === 'en-es' ? 'en' : 'es';
+  const tl  = mode === 'en-es' ? 'es' : 'en';
+  const url = 'https://translate.googleapis.com/translate_a/single'
+            + '?client=gtx&sl=' + sl + '&tl=' + tl + '&dt=t'
+            + '&q=' + encodeURIComponent(text);
+  const r = await fetch(url);
+  const j = await r.json();
+  const t = j[0].map(s => s[0] || '').join('').trim();
+  if (!t || t.toLowerCase() === text.toLowerCase()) throw new Error('igual');
+  return t;
+}
+
+async function translate(text) {
+  if (!text || text.trim().length < 2) return text;
+  // Intentar JSONP primero, luego gtx
+  for (const fn of [() => translateJSONP(text), () => translateGTX(text)]) {
+    try {
+      const r = await fn();
+      if (r) return r;
+    } catch(e) {}
+  }
+  return text; // devolver original sin símbolo de error
+}
+
+/* ═══════════════════════════════════════
+   TTS — pausa mic para evitar loop de eco
+   Prioriza voces latinas para español.
+═══════════════════════════════════════ */
+function tts(text, done) {
+  if (!window.speechSynthesis) { done && done(); return; }
+  window.speechSynthesis.cancel();
+  const u   = new SpeechSynthesisUtterance(text);
+  const vcs = window.speechSynthesis.getVoices();
+  const toES = mode === 'en-es';
+
+  if (toES) {
+    u.voice =
+      vcs.find(v => v.lang === 'es-MX') ||
+      vcs.find(v => v.lang === 'es-CL') ||
+      vcs.find(v => v.lang === 'es-AR') ||
+      vcs.find(v => v.lang === 'es-US') ||
+      vcs.find(v => v.lang === 'es-ES') ||
+      vcs.find(v => v.lang.startsWith('es')) || null;
+    u.lang = u.voice ? u.voice.lang : 'es-MX';
+    u.rate = 1.0;
+  } else {
+    u.voice = vcs.find(v => v.lang === 'en-US') || vcs.find(v => v.lang.startsWith('en')) || null;
+    u.lang  = 'en-US';
+    u.rate  = 1.05;
+  }
+
+  // Pausa mic ANTES de hablar → evita eco
+  isSpeaking = true;
+  pauseMic();
+  setMic('tts'); setLbl('Reproduciendo…', 'tts'); setDot('tts'); setSt('Audio');
+
+  u.onend = u.onerror = () => {
+    isSpeaking = false;
+    // 700ms de silencio para que el eco se disipe
+    setTimeout(() => {
+      if (listening) { resumeMic(); setMic('on'); setLbl('Hablando…','on'); setDot('on'); setSt('Escuchando'); }
+      done && done();
+    }, 700);
+  };
+  window.speechSynthesis.speak(u);
+}
+
+/* ═══════════════════════════════════════
+   SPEECH RECOGNITION
+═══════════════════════════════════════ */
+function buildRec() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r           = new SR();
+  r.lang            = mode === 'en-es' ? 'en-US' : 'es-CL';
+  r.continuous      = true;
+  r.interimResults  = true;
+  r.maxAlternatives = 1;
+
+  r.onstart = () => {
+    if (!isSpeaking) { setDot('on'); setSt('Escuchando'); setMic('on'); setLbl('Hablando…','on'); }
+  };
+
+  r.onresult = (ev) => {
+    if (isSpeaking) return; // ignorar eco del TTS
+
+    let interim = '', final = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) final += t + ' ';
+      else interim += t;
+    }
+
+    document.getElementById('liveTxt').textContent = interim || final || '…';
+    const words = (interim || final).trim().split(/\s+/).filter(Boolean).length;
+    setBar(words);
+
+    // Auto-corte si la frase supera el límite
+    if (document.getElementById('segOn').checked && words >= segLimit && interim.length > 4) {
+      document.getElementById('liveTxt').textContent = '…';
+      setBar(0);
+      enqueue(interim.trim(), true);
+      return;
+    }
+    if (final.trim().length > 1) {
+      document.getElementById('liveTxt').textContent = '…';
+      setBar(0);
+      enqueue(final.trim(), false);
+    }
+  };
+
+  r.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+    if (e.error === 'not-allowed') {
+      showAlert('Permiso de micrófono denegado. Haz clic en el candado 🔒 de la URL y actívalo.', 'err');
+      listening = false; setMic('off'); setLbl('Sin permiso','');
+    }
+  };
+
+  r.onend = () => {
+    if (listening && !isSpeaking) {
+      setTimeout(() => { try { r.start(); } catch(x){} }, 200);
+    }
+  };
+  return r;
+}
+
+function toggleListen() { listening ? stopRec() : startRec(); }
+
+function startRec() {
+  rec = buildRec();
+  if (!rec) { showAlert('Web Speech no disponible. Usa Chrome.', 'err'); return; }
+  listening = true;
+  try { rec.start(); } catch(e){}
+}
+
+function stopRec() {
+  listening = false; isSpeaking = false;
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  try { rec && rec.stop(); } catch(e){}
+  rec = null;
+  setDot(''); setSt('Listo'); setMic('off'); setLbl('Toca para comenzar',''); setBar(0);
+  document.getElementById('liveTxt').textContent = 'Esperando audio…';
+}
+
+function pauseMic()  { try { rec && rec.stop(); } catch(e){} }
+function resumeMic() {
+  if (!rec) rec = buildRec();
+  try { rec && rec.start(); } catch(e){ rec = buildRec(); try { rec.start(); } catch(e2){} }
+}
+
+/* ═══════════════════════════════════════
+   COLA — serializa traducciones
+═══════════════════════════════════════ */
+function enqueue(text, segmented) {
+  txQueue = txQueue.then(() => processOne(text, segmented));
+}
+
+async function processOne(text, segmented) {
+  setDot('load'); setSt('Traduciendo…'); setMic('load');
+  const result = await translate(text);
+  addEntry(text, result, segmented);
+
+  if (document.getElementById('audOn').checked) {
+    await new Promise(resolve => tts(result, resolve));
+  } else {
+    if (listening) { setDot('on'); setSt('Escuchando'); setMic('on'); }
+  }
+}
+
+/* ═══════════════════════════════════════
+   UI
+═══════════════════════════════════════ */
+function addEntry(src, tgt, seg) {
+  const el = document.getElementById('empty');
+  if (el) el.remove();
+  const sc = document.getElementById('scroll');
+  sc.querySelectorAll('.new-en,.new-es').forEach(e => e.classList.remove('new-en','new-es'));
+  const isEN = mode === 'en-es';
+  const div  = document.createElement('div');
+  div.className = 'entry ' + (isEN ? 'new-en' : 'new-es');
+  const ts   = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const tgtQ = tgt.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  div.innerHTML =
+    '<div class="e-src">' + esc(src) + '</div>' +
+    '<div class="e-tgt">' + esc(tgt) + '</div>' +
+    '<div class="e-meta">' +
+      '<span class="badge '+(isEN?'b-en':'b-es')+'">'+(isEN?'🇨🇱 ES':'🇺🇸 EN')+'</span>' +
+      (seg ? '<span class="badge b-seg">fragmento</span>' : '') +
+      '<span>'+ts+'</span>' +
+      '<button class="spk" onclick="tts(\''+tgtQ+'\')">🔊</button>' +
+    '</div>';
+  sc.appendChild(div);
+  sc.scrollTop = sc.scrollHeight;
+}
+
+function clearAll() {
+  document.getElementById('scroll').innerHTML =
+    '<div class="empty" id="empty">Las traducciones aparecerán aquí</div>';
+}
+
+function setDot(c) { document.getElementById('dot').className = 'dot'+(c?' '+c:''); }
+function setSt(t)  { document.getElementById('stxt').textContent = t; }
+
+function setMic(s) {
+  const b = document.getElementById('micBtn');
+  b.className   = 'mic-btn'+(s==='on'?' on':s==='load'?' load':s==='tts'?' tts':'');
+  b.textContent = s==='load'?'⏳':s==='tts'?'🔊':'🎙';
+}
+
+function setLbl(t, cls) {
+  const l = document.getElementById('micLbl');
+  l.textContent = t;
+  l.className   = 'mic-lbl'+(cls?' '+cls:'');
+}
+
+function setBar(w) {
+  const pct = Math.min((w/segLimit)*100, 100);
+  const f   = document.getElementById('barFill');
+  f.style.width = pct + '%';
+  f.className   = 'bar-fill'+(pct>=80?' hot':'');
+  document.getElementById('barW').textContent = w+' palabras';
+  document.getElementById('barS').textContent = pct>=100?'⚡ Cortando':pct>=70?'⚠ Cerca':'';
+}
+
+function showAlert(msg, type='info') {
+  const b = document.getElementById('alert');
+  b.className = 'alert show '+type;
+  b.textContent = msg;
+  if (type==='info') setTimeout(()=>b.classList.remove('show'), 4000);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnEN').className = 'lb'+(m==='en-es'?' a-en':'');
+  document.getElementById('btnES').className = 'lb'+(m==='es-en'?' a-es':'');
+  if (listening) { stopRec(); setTimeout(startRec, 400); }
+}
+
+function swapMode() { setMode(mode==='en-es'?'es-en':'en-es'); }
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+window.addEventListener('load', () => {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.getVoices();
+  }
+  detectHeadphones();
+  navigator.mediaDevices &&
+    navigator.mediaDevices.addEventListener &&
+    navigator.mediaDevices.addEventListener('devicechange', detectHeadphones);
+
+  if (!(window.SpeechRecognition || window.webkitSpeechRecognition))
+    showAlert('Web Speech no disponible. Usa Chrome o Safari.', 'err');
+  else
+    showAlert('Listo. Selecciona idioma y toca 🎙', 'info');
+});
+</script>
+</body>
+</html>
